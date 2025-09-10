@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 
-namespace FileCopyHelper.Models
+namespace FileHelper.Models
 {
     public class CopyConfiguration
     {

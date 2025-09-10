@@ -1,4 +1,4 @@
-using FileCopyHelper.Models;
+using FileHelper.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace FileCopyHelper.Services
+namespace FileHelper.Services
 {
     public class FileCopyService
     {

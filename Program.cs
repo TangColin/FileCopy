@@ -1,7 +1,7 @@
 using System;
 using System.Windows.Forms;
 
-namespace FileCopyHelper
+namespace FileHelper
 {
     internal static class Program
     {

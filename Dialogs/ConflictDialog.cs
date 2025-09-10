@@ -1,10 +1,10 @@
-using FileCopyHelper.Models;
+using FileHelper.Models;
 using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
-namespace FileCopyHelper
+namespace FileHelper
 {
     public partial class ConflictDialog : Form
     {

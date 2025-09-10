@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace FileCopyHelper
+namespace FileHelper
 {
     public partial class SaveConfigDialog : Form
     {

@@ -1,11 +1,11 @@
-using FileCopyHelper.Models;
+using FileHelper.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace FileCopyHelper.Services
+namespace FileHelper.Services
 {
     public class ConfigurationService
     {
@@ -14,10 +14,9 @@ namespace FileCopyHelper.Services
 
         public ConfigurationService()
         {
-            // 使用程序当前目录作为配置文件存储位置
-            _configDirectory = Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "Configurations");
+            // 使用用户文档目录作为配置文件存储位置
+            string documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            _configDirectory = Path.Combine(documentsPath, "FileHelperConfigs");
 
             // 确保配置目录存在
             if (!Directory.Exists(_configDirectory))
@@ -37,7 +36,7 @@ namespace FileCopyHelper.Services
 
                 // 清理文件名中的无效字符
                 string safeFileName = GetSafeFileName(config.Name);
-                string filePath = Path.Combine(_configDirectory, safeFileName + _configExtension);
+                string filePath = Path.Combine(_configDirectory, safeFileName + "_file" + _configExtension);
 
                 config.LastModified = DateTime.Now;
                 string json = config.ToJson();
@@ -57,7 +56,7 @@ namespace FileCopyHelper.Services
             try
             {
                 string safeFileName = GetSafeFileName(configName);
-                string filePath = Path.Combine(_configDirectory, safeFileName + _configExtension);
+                string filePath = Path.Combine(_configDirectory, safeFileName + "_file" + _configExtension);
 
                 if (!File.Exists(filePath))
                 {
@@ -83,8 +82,9 @@ namespace FileCopyHelper.Services
                     return new List<string>();
                 }
 
-                return Directory.GetFiles(_configDirectory, "*" + _configExtension)
-                    .Select(file => Path.GetFileNameWithoutExtension(file))
+                // 只获取包含"_file"的配置文件（即文件复制配置）
+                return Directory.GetFiles(_configDirectory, "*_file" + _configExtension)
+                    .Select(file => Path.GetFileNameWithoutExtension(file).Replace("_file", ""))
                     .OrderBy(name => name)
                     .ToList();
             }
@@ -100,7 +100,7 @@ namespace FileCopyHelper.Services
             try
             {
                 string safeFileName = GetSafeFileName(configName);
-                string filePath = Path.Combine(_configDirectory, safeFileName + _configExtension);
+                string filePath = Path.Combine(_configDirectory, safeFileName + "_file" + _configExtension);
 
                 if (File.Exists(filePath))
                 {
@@ -190,13 +190,160 @@ namespace FileCopyHelper.Services
         public string GetConfigurationPath(string configName)
         {
             string safeFileName = GetSafeFileName(configName);
-            return Path.Combine(_configDirectory, safeFileName + _configExtension);
+            return Path.Combine(_configDirectory, safeFileName + "_file" + _configExtension);
         }
 
         public bool ConfigurationExists(string configName)
         {
             string filePath = GetConfigurationPath(configName);
             return File.Exists(filePath);
+        }
+
+        // 新增方法：保存链接配置
+        public bool SaveLinkConfiguration(LinkConfiguration config)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(config.Name))
+                {
+                    return false;
+                }
+
+                // 清理文件名中的无效字符
+                string safeFileName = GetSafeFileName(config.Name);
+                string filePath = Path.Combine(_configDirectory, safeFileName + "_link" + _configExtension);
+
+                config.LastModified = DateTime.Now;
+                string json = config.ToJson();
+
+                File.WriteAllText(filePath, json);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"保存链接配置失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        // 新增方法：加载链接配置
+        public LinkConfiguration LoadLinkConfiguration(string configName)
+        {
+            try
+            {
+                string safeFileName = GetSafeFileName(configName);
+                string filePath = Path.Combine(_configDirectory, safeFileName + "_link" + _configExtension);
+
+                if (!File.Exists(filePath))
+                {
+                    return null;
+                }
+
+                string json = File.ReadAllText(filePath);
+                return LinkConfiguration.FromJson(json);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"加载链接配置失败: {ex.Message}");
+                return null;
+            }
+        }
+
+        // 新增方法：获取链接配置名称列表
+        public List<string> GetLinkConfigurationNames()
+        {
+            try
+            {
+                if (!Directory.Exists(_configDirectory))
+                {
+                    return new List<string>();
+                }
+
+                return Directory.GetFiles(_configDirectory, "*_link" + _configExtension)
+                    .Select(file => Path.GetFileNameWithoutExtension(file).Replace("_link", ""))
+                    .OrderBy(name => name)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"获取链接配置列表失败: {ex.Message}");
+                return new List<string>();
+            }
+        }
+
+        // 新增方法：删除链接配置
+        public bool DeleteLinkConfiguration(string configName)
+        {
+            try
+            {
+                string safeFileName = GetSafeFileName(configName);
+                string filePath = Path.Combine(_configDirectory, safeFileName + "_link" + _configExtension);
+
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"删除链接配置失败: {ex.Message}");
+                return false;
+            }
+        }
+
+        // 新增方法：获取所有链接配置
+        public List<LinkConfiguration> GetAllLinkConfigurations()
+        {
+            var configurations = new List<LinkConfiguration>();
+
+            try
+            {
+                var configNames = GetLinkConfigurationNames();
+                foreach (string configName in configNames)
+                {
+                    var config = LoadLinkConfiguration(configName);
+                    if (config != null)
+                    {
+                        configurations.Add(config);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"获取所有链接配置失败: {ex.Message}");
+            }
+
+            return configurations.OrderByDescending(c => c.LastModified).ToList();
+        }
+
+        // 新增方法：重命名链接配置
+        public bool RenameLinkConfiguration(string oldName, string newName)
+        {
+            try
+            {
+                var config = LoadLinkConfiguration(oldName);
+                if (config == null)
+                {
+                    return false;
+                }
+
+                config.Name = newName;
+                if (SaveLinkConfiguration(config))
+                {
+                    DeleteLinkConfiguration(oldName);
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"重命名链接配置失败: {ex.Message}");
+                return false;
+            }
         }
     }
 }
